@@ -258,7 +258,12 @@ graph TD
 
 ### 2.  Anti-Corruption Adapter Pattern
 
-**Explanation:** This pattern is used to prevent the "corruption" of a new system (or a new part of a system) by the old, often legacy, system's outdated APIs, data models, or technologies. An "anti-corruption adapter" service acts as a translation layer between the new and old systems, converting data models and API calls from the new system's preferred format to the old system's format, and vice versa.Use Case: A company is migrating from a monolithic legacy e-commerce system to a new microservices-based architecture. The new Order microservice needs to interact with the old Inventory system. An Anti-Corruption Adapter service sits between them, translating the modern API calls and data structures from the new Order service into the format expected by the legacy Inventory system, and converting the legacy responses back for the new service.Mermaid Diagram:graph TD
+**Explanation:** This pattern is used to prevent the "corruption" of a new system (or a new part of a system) by the old, often legacy, system's outdated APIs, data models, or technologies. An "anti-corruption adapter" service acts as a translation layer between the new and old systems, converting data models and API calls from the new system's preferred format to the old system's format, and vice versa.
+
+**Use Case:** A company is migrating from a monolithic legacy e-commerce system to a new microservices-based architecture. The new Order microservice needs to interact with the old Inventory system. An Anti-Corruption Adapter service sits between them, translating the modern API calls and data structures from the new Order service into the format expected by the legacy Inventory system, and converting the legacy responses back for the new service.
+
+```mermaid
+graph TD
     subgraph New Part of System
         Microservice1[Microservice 1] --> AntiCorruptionService[Anti-Corruption Service];
         Microservice2[Microservice 2] --> AntiCorruptionService;
@@ -272,7 +277,16 @@ graph TD
         AntiCorruptionService -- OLD Models, APIs, technology --> MonolithicApplication[Monolithic Application];
         MonolithicApplication --> MonolithicDatabase[Monolithic Database];
     end
-2.  Backends for Frontends PatternExplanation: This pattern suggests creating a separate backend service for each type of frontend application (e.g., web, iOS, Android). This addresses the problem where a single, unified backend might not fully leverage the unique capabilities or data requirements of different frontend types, leading to inefficient APIs or complex client-side logic. Each "Backend for Frontend" (BFF) can be optimized for its specific client, providing tailored APIs and data transformations.Use Case: A media streaming service has a web application, an iOS app, and an Android app. Each client has different UI layouts, data needs, and network constraints. Instead of a single backend, there's:A Web Backend optimized for browser-specific interactions and data.An iOS Backend providing a lean API tailored for the iOS app.An Android Backend providing an API optimized for the Android app.All BFFs interact with the same core microservices (e.g., Content Service, User Service).Mermaid Diagram:graph TD
+```
+
+### 3.  Backends for Frontends Pattern
+
+**Explanation:** This pattern suggests creating a separate backend service for each type of frontend application (e.g., web, iOS, Android). This addresses the problem where a single, unified backend might not fully leverage the unique capabilities or data requirements of different frontend types, leading to inefficient APIs or complex client-side logic. Each "Backend for Frontend" (BFF) can be optimized for its specific client, providing tailored APIs and data transformations.
+
+**Use Case:** A media streaming service has a web application, an iOS app, and an Android app. Each client has different UI layouts, data needs, and network constraints. Instead of a single backend, there's:A Web Backend optimized for browser-specific interactions and data.An iOS Backend providing a lean API tailored for the iOS app.An Android Backend providing an API optimized for the Android app.All BFFs interact with the same core microservices (e.g., Content Service, User Service).
+
+```mermaid
+graph TD
     WebFrontend[Web Frontend] --> WebBackend[Web Backend];
     IOSFrontend[iOS Frontend] --> IOSBackend[iOS Backend];
     AndroidFrontend[Android Frontend] --> AndroidBackend[Android Backend];
@@ -284,20 +298,32 @@ graph TD
     AndroidBackend --> Service1;
     AndroidBackend --> Service2;
     AndroidBackend --> Service3;
-3.  Throttling and Rate Limiting PatternExplanation: This pattern is used to control the rate at which a client or user can access an API or service. It prevents potential overconsumption of system resources, protects against denial-of-service attacks, and manages usage of external APIs. It sets a limit on the number of requests allowed within a specific time window.Use Case: A public API for weather data. To prevent abuse and ensure fair usage, the API implements rate limiting, allowing each client only 100 requests per minute. If a client exceeds this limit, subsequent requests are rejected until the next time window.Mermaid Diagram:graph TD
-    Client[Client] -- Requests --> Service[Service (Requests limited by Bandwidth)];
+```
+## Reliability, Error handling and Recovery Software Arechitecture Patterns
+
+### 1. Throttling and Rate Limiting Pattern
+
+**Explanation:** This pattern is used to control the rate at which a client or user can access an API or service. It prevents potential overconsumption of system resources, protects against denial-of-service attacks, and manages usage of external APIs. It sets a limit on the number of requests allowed within a specific time window.
+
+**Use Case:** A public API for weather data. To prevent abuse and ensure fair usage, the API implements rate limiting, allowing each client only 100 requests per minute. If a client exceeds this limit, subsequent requests are rejected until the next time window.
+
+```mermaid
+graph TD
+    Client[Client] -- Requests --> Service["Service (Requests limited by Bandwidth)"];
     Service --> Database[Database];
-4.  Retry PatternExplanation: The Retry pattern addresses transient faults (temporary software errors, hardware glitches, network issues) that can occur in distributed systems. When a service call fails due to such a fault, the client (or an intermediary) automatically retries the request after a short delay. This pattern improves the reliability of interactions by allowing temporary issues to resolve themselves.Use Case: A microservice calls an external payment gateway. If the first attempt fails due to a temporary network glitch, the service automatically retries the payment request a few times with increasing delays before reporting a permanent failure to the user.Mermaid Diagram:graph TD
+```
+
+1.  Retry PatternExplanation: The Retry pattern addresses transient faults (temporary software errors, hardware glitches, network issues) that can occur in distributed systems. When a service call fails due to such a fault, the client (or an intermediary) automatically retries the request after a short delay. This pattern improves the reliability of interactions by allowing temporary issues to resolve themselves.Use Case: A microservice calls an external payment gateway. If the first attempt fails due to a temporary network glitch, the service automatically retries the payment request a few times with increasing delays before reporting a permanent failure to the user.Mermaid Diagram:graph TD
     Client[Client] -- Request --> Service[Service];
     Service -- Resend request (Retry) --> OtherService[Other Service];
     OtherService -- Failure (Transient) --> Service;
     Service -- Success --> Client;
-5.  Circuit Breaker PatternExplanation: The Circuit Breaker pattern prevents an application from repeatedly trying to execute an operation that is likely to fail, thereby saving resources and improving the application's responsiveness. When a service experiences a certain number of failures within a threshold, the circuit "opens," preventing further calls to that service. After a timeout, it moves to a "half-open" state to test if the service has recovered, and then either closes (if successful) or re-opens (if still failing).Use Case: An online dating service that relies on an external Image Service to load user photos. If the Image Service starts returning errors frequently, the Circuit Breaker for the Image Service opens. The main application then stops trying to call the Image Service, perhaps displaying placeholder images instead, preventing a cascade of failures and allowing the Image Service time to recover.Mermaid Diagram:graph TD
+2.  Circuit Breaker PatternExplanation: The Circuit Breaker pattern prevents an application from repeatedly trying to execute an operation that is likely to fail, thereby saving resources and improving the application's responsiveness. When a service experiences a certain number of failures within a threshold, the circuit "opens," preventing further calls to that service. After a timeout, it moves to a "half-open" state to test if the service has recovered, and then either closes (if successful) or re-opens (if still failing).Use Case: An online dating service that relies on an external Image Service to load user photos. If the Image Service starts returning errors frequently, the Circuit Breaker for the Image Service opens. The main application then stops trying to call the Image Service, perhaps displaying placeholder images instead, preventing a cascade of failures and allowing the Image Service time to recover.Mermaid Diagram:graph TD
     User --> MainApplication[Main Application (Online Dating Service)];
     MainApplication -- Calls --> CircuitBreaker[Circuit Breaker];
     CircuitBreaker -- Open (1 response, 20 errors) --> ImageService[Image Service];
     CircuitBreaker -- Closed --> ProfileService[Profile Service];
-6.  Dead Letter Queue (DLQ) PatternExplanation: A Dead Letter Queue (DLQ) is a special queue in a message broker that holds messages that cannot be successfully processed or delivered to their intended destination. Messages can end up in a DLQ due to various reasons, such as invalid format, processing errors, or exceeding retry limits. The DLQ provides a mechanism to isolate problematic messages for later inspection, debugging, or manual intervention, preventing them from blocking the main processing flow.Use Case: An order processing system uses a message queue for new orders. If an order message is malformed or if the Order Service fails to process it after multiple retries, the message is automatically moved to a Dead Letter Queue. An operations team can then inspect the DLQ, fix the problematic messages, and re-inject them into the system.Mermaid Diagram:graph TD
+3.  Dead Letter Queue (DLQ) PatternExplanation: A Dead Letter Queue (DLQ) is a special queue in a message broker that holds messages that cannot be successfully processed or delivered to their intended destination. Messages can end up in a DLQ due to various reasons, such as invalid format, processing errors, or exceeding retry limits. The DLQ provides a mechanism to isolate problematic messages for later inspection, debugging, or manual intervention, preventing them from blocking the main processing flow.Use Case: An order processing system uses a message queue for new orders. If an order message is malformed or if the Order Service fails to process it after multiple retries, the message is automatically moved to a Dead Letter Queue. An operations team can then inspect the DLQ, fix the problematic messages, and re-inject them into the system.Mermaid Diagram:graph TD
     User --> APIGateway[API Gateway];
     APIGateway --> OrderService[Order Service];
     OrderService -- Publish Message --> MessageBroker[Message Broker];
@@ -305,7 +331,7 @@ graph TD
     MessageBroker -- Digital Assets --> PaymentService[Payment Service];
     MessageBroker -- If processing fails --> DeadLetterQueue[Dead Letter Message Broker (Dead Letter)];
     DeadLetterQueue --> FulfillmentService[Fulfillment Service (for inspection/reprocessing)];
-7.  Rolling DeploymentExplanation: Rolling deployment is a strategy where a new version of an application is gradually deployed by replacing instances of the old version with instances of the new version, one by one or in small batches. During the deployment, both old and new versions of the application are running simultaneously. This minimizes downtime and risk, as issues with the new version can be detected early, and the deployment can be paused or rolled back.Use Case: An online banking application needs an update. Instead of taking the entire system offline, a rolling deployment is used. New instances with the updated application are brought online and added to the load balancer, while old instances are gracefully shut down and removed. This ensures continuous availability for users.Mermaid Diagram:graph TD
+4.  Rolling DeploymentExplanation: Rolling deployment is a strategy where a new version of an application is gradually deployed by replacing instances of the old version with instances of the new version, one by one or in small batches. During the deployment, both old and new versions of the application are running simultaneously. This minimizes downtime and risk, as issues with the new version can be detected early, and the deployment can be paused or rolled back.Use Case: An online banking application needs an update. Instead of taking the entire system offline, a rolling deployment is used. New instances with the updated application are brought online and added to the load balancer, while old instances are gracefully shut down and removed. This ensures continuous availability for users.Mermaid Diagram:graph TD
     User --> LoadBalancer[Load Balancer];
     subgraph Old Version
         LoadBalancer --> Instance1_Old[Instance 1];
@@ -320,7 +346,7 @@ graph TD
     Instance1_Old -- Replaced By --> Instance4_New;
     Instance2_Old -- Replaced By --> Instance5_New;
     Instance3_Old -- Replaced By --> Instance6_New;
-8.  Blue-Green DeploymentExplanation: Blue-Green deployment is a technique that reduces downtime and risk by running two identical production environments, "Blue" (current live version) and "Green" (new version). At any time, only one environment is live. When deploying a new version, it's deployed to the inactive environment (e.g., Green). Once tested, traffic is switched from Blue to Green instantly via a load balancer. If issues arise, traffic can be immediately switched back to Blue.Use Case: A critical financial trading platform needs a new feature deployed with zero downtime. The current version runs on the "Blue" environment. The new version is deployed and thoroughly tested on the "Green" environment. Once validated, the load balancer is reconfigured to direct all traffic to "Green." If any critical bug is found post-switch, traffic is instantly reverted to "Blue."Mermaid Diagram:graph TD
+5.  Blue-Green DeploymentExplanation: Blue-Green deployment is a technique that reduces downtime and risk by running two identical production environments, "Blue" (current live version) and "Green" (new version). At any time, only one environment is live. When deploying a new version, it's deployed to the inactive environment (e.g., Green). Once tested, traffic is switched from Blue to Green instantly via a load balancer. If issues arise, traffic can be immediately switched back to Blue.Use Case: A critical financial trading platform needs a new feature deployed with zero downtime. The current version runs on the "Blue" environment. The new version is deployed and thoroughly tested on the "Green" environment. Once validated, the load balancer is reconfigured to direct all traffic to "Green." If any critical bug is found post-switch, traffic is instantly reverted to "Blue."Mermaid Diagram:graph TD
     User --> LoadBalancer[Load Balancer];
     subgraph Blue Environment (Old Version)
         LoadBalancer -- Current Traffic --> Instance1_Blue[Instance 1];
@@ -332,7 +358,7 @@ graph TD
         LoadBalancer -- Switch Traffic To --> Instance5_Green[Instance 5];
         LoadBalancer -- Switch Traffic To --> Instance6_Green[Instance 6];
     end
-9.  Canary Release PatternExplanation: Canary Release is a deployment strategy that gradually rolls out a new version of an application to a small subset of users before making it available to the entire user base. This allows for real-world testing and monitoring of the new version with minimal impact. If the canary release performs well, it's rolled out to more users; otherwise, it's quickly rolled back.Use Case: A social media platform wants to test a new algorithm for its news feed. Instead of deploying it to all users, the new algorithm is deployed to "canary servers." A small percentage of users (e.g., 5% of beta users) are routed to these canary servers via the load balancer. The team monitors metrics (e.g., error rates, user engagement) for this group. If successful, the new algorithm is gradually rolled out to more users.Mermaid Diagram:graph TD
+6.  Canary Release PatternExplanation: Canary Release is a deployment strategy that gradually rolls out a new version of an application to a small subset of users before making it available to the entire user base. This allows for real-world testing and monitoring of the new version with minimal impact. If the canary release performs well, it's rolled out to more users; otherwise, it's quickly rolled back.Use Case: A social media platform wants to test a new algorithm for its news feed. Instead of deploying it to all users, the new algorithm is deployed to "canary servers." A small percentage of users (e.g., 5% of beta users) are routed to these canary servers via the load balancer. The team monitors metrics (e.g., error rates, user engagement) for this group. If successful, the new algorithm is gradually rolled out to more users.Mermaid Diagram:graph TD
     User[User] --> LoadBalancer[Load Balancer];
     BetaUser[Beta User] --> LoadBalancer;
 
@@ -347,7 +373,7 @@ graph TD
         LoadBalancer -- Small Traffic --> Instance5[Instance 5];
         LoadBalancer -- Small Traffic --> Instance6[Instance 6];
     end
-10. A/B Testing PatternExplanation: A/B Testing (also known as split testing) is a method of comparing two versions of a webpage or app feature against each other to determine which one performs better. Users are randomly divided into groups (A and B), with each group experiencing a different version. Metrics (e.g., conversion rates, click-through rates) are collected and analyzed to decide which version is more effective.Use Case: An online store wants to test two different recommendation algorithms.Group A (Control): Customers are shown recommendations from the existing algorithm.Group B (Experiment): Customers are shown recommendations from the new algorithm (deployed on "Servers with New Feature").The load balancer routes customers to the appropriate server group, and the store monitors which group generates more sales or higher engagement to determine the better algorithm.Mermaid Diagram:graph TD
+7.  A/B Testing PatternExplanation: A/B Testing (also known as split testing) is a method of comparing two versions of a webpage or app feature against each other to determine which one performs better. Users are randomly divided into groups (A and B), with each group experiencing a different version. Metrics (e.g., conversion rates, click-through rates) are collected and analyzed to decide which version is more effective.Use Case: An online store wants to test two different recommendation algorithms.Group A (Control): Customers are shown recommendations from the existing algorithm.Group B (Experiment): Customers are shown recommendations from the new algorithm (deployed on "Servers with New Feature").The load balancer routes customers to the appropriate server group, and the store monitors which group generates more sales or higher engagement to determine the better algorithm.Mermaid Diagram:graph TD
     CustomerA[Customer (A Group)] --> LoadBalancer[Load Balancer];
     CustomerB[Customer (B Group)] --> LoadBalancer;
 
@@ -359,7 +385,7 @@ graph TD
         LoadBalancer -- Route to B --> Instance5[Instance 5 (Servers with New Feature)];
         LoadBalancer -- Route to B --> Instance6[Instance 6 (Servers with New Feature)];
     end
-11. Chaos Engineering PatternExplanation: Chaos Engineering is the discipline of experimenting on a system in production in order to build confidence in the system's ability to withstand turbulent conditions. It involves deliberately injecting failures (e.g., network latency, service outages, resource exhaustion) into a production system to identify weaknesses and validate the system's resilience and recovery mechanisms.Use Case: A company wants to ensure its microservices architecture can handle service failures. They deliberately inject latency into the network connection of a specific microservice or shut down an instance of a database. By observing how the system reacts and recovers, they can identify and fix vulnerabilities before they cause real outages.Mermaid Diagram:graph TD
+8.  Chaos Engineering PatternExplanation: Chaos Engineering is the discipline of experimenting on a system in production in order to build confidence in the system's ability to withstand turbulent conditions. It involves deliberately injecting failures (e.g., network latency, service outages, resource exhaustion) into a production system to identify weaknesses and validate the system's resilience and recovery mechanisms.Use Case: A company wants to ensure its microservices architecture can handle service failures. They deliberately inject latency into the network connection of a specific microservice or shut down an instance of a database. By observing how the system reacts and recovers, they can identify and fix vulnerabilities before they cause real outages.Mermaid Diagram:graph TD
     User --> LoadBalancer[Load Balancer];
     subgraph Production System
         LoadBalancer --> Service[Service];
