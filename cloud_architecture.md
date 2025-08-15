@@ -353,8 +353,8 @@ graph TD
     OrderService -- Publish Message --> MessageBroker[Message Broker];
     MessageBroker -- Physical Goods --> InventoryService[Inventory Service];
     MessageBroker -- Digital Assets --> PaymentService[Payment Service];
-    MessageBroker -- If processing fails --> DeadLetterQueue[Dead Letter Message Broker (Dead Letter)];
-    DeadLetterQueue --> FulfillmentService[Fulfillment Service (for inspection/reprocessing)];
+    MessageBroker -- If processing fails --> DeadLetterQueue["Dead Letter Message Broker (Dead Letter)"];
+    DeadLetterQueue --> FulfillmentService["Fulfillment Service (for inspection/reprocessing)"];
 ```
 ## Deployment and Production and Testing Patterns
 
@@ -381,19 +381,35 @@ graph TD
     Instance2_Old -- Replaced By --> Instance5_New;
     Instance3_Old -- Replaced By --> Instance6_New;
 ```
-1.  Blue-Green DeploymentExplanation: Blue-Green deployment is a technique that reduces downtime and risk by running two identical production environments, "Blue" (current live version) and "Green" (new version). At any time, only one environment is live. When deploying a new version, it's deployed to the inactive environment (e.g., Green). Once tested, traffic is switched from Blue to Green instantly via a load balancer. If issues arise, traffic can be immediately switched back to Blue.Use Case: A critical financial trading platform needs a new feature deployed with zero downtime. The current version runs on the "Blue" environment. The new version is deployed and thoroughly tested on the "Green" environment. Once validated, the load balancer is reconfigured to direct all traffic to "Green." If any critical bug is found post-switch, traffic is instantly reverted to "Blue."Mermaid Diagram:graph TD
+### 2.  Blue-Green Deployment
+
+**Explanation:** Blue-Green deployment is a technique that reduces downtime and risk by running two identical production environments, "Blue" (current live version) and "Green" (new version). At any time, only one environment is live. When deploying a new version, it's deployed to the inactive environment (e.g., Green). Once tested, traffic is switched from Blue to Green instantly via a load balancer. If issues arise, traffic can be immediately switched back to Blue.
+
+**Use Case:** A critical financial trading platform needs a new feature deployed with zero downtime. The current version runs on the "Blue" environment. The new version is deployed and thoroughly tested on the "Green" environment. Once validated, the load balancer is reconfigured to direct all traffic to "Green." If any critical bug is found post-switch, traffic is instantly reverted to "Blue."
+
+```mermaid
+graph TD
     User --> LoadBalancer[Load Balancer];
-    subgraph Blue Environment (Old Version)
+    subgraph "Blue Environment (Old Version)"
         LoadBalancer -- Current Traffic --> Instance1_Blue[Instance 1];
         LoadBalancer -- Current Traffic --> Instance2_Blue[Instance 2];
         LoadBalancer -- Current Traffic --> Instance3_Blue[Instance 3];
     end
-    subgraph Green Environment (New Version - deployed onto green instances)
+    subgraph "Green Environment (New Version - deployed onto green instances)"
         LoadBalancer -- Switch Traffic To --> Instance4_Green[Instance 4];
         LoadBalancer -- Switch Traffic To --> Instance5_Green[Instance 5];
         LoadBalancer -- Switch Traffic To --> Instance6_Green[Instance 6];
     end
-2.  Canary Release PatternExplanation: Canary Release is a deployment strategy that gradually rolls out a new version of an application to a small subset of users before making it available to the entire user base. This allows for real-world testing and monitoring of the new version with minimal impact. If the canary release performs well, it's rolled out to more users; otherwise, it's quickly rolled back.Use Case: A social media platform wants to test a new algorithm for its news feed. Instead of deploying it to all users, the new algorithm is deployed to "canary servers." A small percentage of users (e.g., 5% of beta users) are routed to these canary servers via the load balancer. The team monitors metrics (e.g., error rates, user engagement) for this group. If successful, the new algorithm is gradually rolled out to more users.Mermaid Diagram:graph TD
+``` 
+
+### 3. Canary Release Pattern
+
+**Explanation:** Canary Release is a deployment strategy that gradually rolls out a new version of an application to a small subset of users before making it available to the entire user base. This allows for real-world testing and monitoring of the new version with minimal impact. If the canary release performs well, it's rolled out to more users; otherwise, it's quickly rolled back.
+
+**Use Case:** A social media platform wants to test a new algorithm for its news feed. Instead of deploying it to all users, the new algorithm is deployed to "canary servers." A small percentage of users (e.g., 5% of beta users) are routed to these canary servers via the load balancer. The team monitors metrics (e.g., error rates, user engagement) for this group. If successful, the new algorithm is gradually rolled out to more users.
+
+```mermaid
+graph TD
     User[User] --> LoadBalancer[Load Balancer];
     BetaUser[Beta User] --> LoadBalancer;
 
@@ -403,24 +419,41 @@ graph TD
         LoadBalancer -- Most Traffic --> Instance3[Instance 3];
     end
 
-    subgraph Canary Servers (Updated)
+    subgraph "Canary Servers (Updated)"
         LoadBalancer -- Small Traffic --> Instance4[Instance 4];
         LoadBalancer -- Small Traffic --> Instance5[Instance 5];
         LoadBalancer -- Small Traffic --> Instance6[Instance 6];
     end
-3.  A/B Testing PatternExplanation: A/B Testing (also known as split testing) is a method of comparing two versions of a webpage or app feature against each other to determine which one performs better. Users are randomly divided into groups (A and B), with each group experiencing a different version. Metrics (e.g., conversion rates, click-through rates) are collected and analyzed to decide which version is more effective.Use Case: An online store wants to test two different recommendation algorithms.Group A (Control): Customers are shown recommendations from the existing algorithm.Group B (Experiment): Customers are shown recommendations from the new algorithm (deployed on "Servers with New Feature").The load balancer routes customers to the appropriate server group, and the store monitors which group generates more sales or higher engagement to determine the better algorithm.Mermaid Diagram:graph TD
-    CustomerA[Customer (A Group)] --> LoadBalancer[Load Balancer];
-    CustomerB[Customer (B Group)] --> LoadBalancer;
+```
+### 4.  A/B Testing Pattern
+
+**Explanation:** A/B Testing (also known as split testing) is a method of comparing two versions of a webpage or app feature against each other to determine which one performs better. Users are randomly divided into groups (A and B), with each group experiencing a different version. Metrics (e.g., conversion rates, click-through rates) are collected and analyzed to decide which version is more effective.
+
+**Use Case:** An online store wants to test two different recommendation algorithms.Group A (Control): Customers are shown recommendations from the existing algorithm.Group B (Experiment): Customers are shown recommendations from the new algorithm (deployed on "Servers with New Feature").The load balancer routes customers to the appropriate server group, and the store monitors which group generates more sales or higher engagement to determine the better algorithm.
+
+```mermaid
+graph TD
+    CustomerA["Customer (A Group)"] --> LoadBalancer[Load Balancer];
+    CustomerB["Customer (B Group)"] --> LoadBalancer;
 
     subgraph Online Store Recommendation Service
         LoadBalancer -- Route to A --> Instance1[Instance 1];
         LoadBalancer -- Route to A --> Instance2[Instance 2];
         LoadBalancer -- Route to A --> Instance3[Instance 3];
-        LoadBalancer -- Route to B --> Instance4[Instance 4 (Servers with New Feature)];
-        LoadBalancer -- Route to B --> Instance5[Instance 5 (Servers with New Feature)];
-        LoadBalancer -- Route to B --> Instance6[Instance 6 (Servers with New Feature)];
+        LoadBalancer -- Route to B --> Instance4["Instance 4 (Servers with New Feature)"];
+        LoadBalancer -- Route to B --> Instance5["Instance 5 (Servers with New Feature)"];
+        LoadBalancer -- Route to B --> Instance6["Instance 6 (Servers with New Feature)"];
     end
-4.  Chaos Engineering PatternExplanation: Chaos Engineering is the discipline of experimenting on a system in production in order to build confidence in the system's ability to withstand turbulent conditions. It involves deliberately injecting failures (e.g., network latency, service outages, resource exhaustion) into a production system to identify weaknesses and validate the system's resilience and recovery mechanisms.Use Case: A company wants to ensure its microservices architecture can handle service failures. They deliberately inject latency into the network connection of a specific microservice or shut down an instance of a database. By observing how the system reacts and recovers, they can identify and fix vulnerabilities before they cause real outages.Mermaid Diagram:graph TD
+```
+
+### 5.  Chaos Engineering Pattern
+
+**Explanation:** Chaos Engineering is the discipline of experimenting on a system in production in order to build confidence in the system's ability to withstand turbulent conditions. It involves deliberately injecting failures (e.g., network latency, service outages, resource exhaustion) into a production system to identify weaknesses and validate the system's resilience and recovery mechanisms.
+
+**Use Case:** A company wants to ensure its microservices architecture can handle service failures. They deliberately inject latency into the network connection of a specific microservice or shut down an instance of a database. By observing how the system reacts and recovers, they can identify and fix vulnerabilities before they cause real outages.
+
+```mermaid
+graph TD
     User --> LoadBalancer[Load Balancer];
     subgraph Production System
         LoadBalancer --> Service[Service];
@@ -432,3 +465,4 @@ graph TD
         Instance3 --> Database;
         Service -- Deliberately injecting failures --> Monitoring[Monitoring & Plan to fix issues];
     end
+```
