@@ -1,199 +1,491 @@
-# Software Architecture & Design of Large Scale Systems - Notes
+# Software Architecture & Design of Large Scale Systems Notes
 
+-----
 
-## 1. Introduction to System Requirements & Architectural Drivers
-Requirements
-A formal description of what the system needs to do.
+## **Introduction to System Requirements & Architectural Drivers**
 
-Functional Requirements: Features and behaviors of the system, such as user actions and system outcomes.
+**Requirements** are a formal description of what needs to be built. There are three main types of requirements that act as architectural drivers:
 
-Non-Functional Requirements (Quality Attributes): How well the system performs, dictating its architecture. Examples include:
+  * **Features of the System**: These are the functional requirements. A system takes in user actions and events to produce a result or outcome.
+  * **Quality Attributes**: These are non-functional requirements that dictate the software architecture. Examples include:
+      * Scalability
+      * Availability
+      * Reliability
+      * Security
+      * Performance
+  * **System Constraints**: These are the limitations and boundaries of the system.
 
-Performance: How fast the system responds.
+-----
 
-Scalability: The ability to handle growth in work.
+## **Feature Requirements - Step-by-Step Process**
 
-Availability: The uptime and accessibility of the service.
+Methods for gathering requirements include using **use cases** (scenarios in which the system is used) and **user flows** (step-by-step or graphical representations of each use case).
 
-Reliability: The probability of the system to perform as expected.
+The steps for gathering requirements are:
 
-Security: Protection against unauthorized access.
+1.  Identify all actors/users in the system.
+2.  Capture and describe all possible use cases/scenarios.
+3.  Expand each use case through the flow of events in a user flow. Each event contains an action and data.
 
-System Constraints: Pre-existing decisions or limitations that restrict architectural choices, such as technical, business, or regulatory constraints.
+A **Sequence Diagram** is a diagram that shows the interactions between actors and objects.
 
-Diagrams
-The book mentions that functional requirements relate to user actions and system outcomes. Here's a simple diagram to illustrate this relationship.
+Here's an example of a sequence diagram:
 
 ```mermaid
-graph TD
-    A[User Actions] --> B{System};
-    B --> C[Result/Outcome];
+sequenceDiagram
+    participant User as User Actions
+    participant System
+    participant User2 as Events
+
+    User->>System: User Actions
+    User2->>System: Events
+    System-->>User: Result/Outcome
 ```
 
-2. Most Important Quality Attributes
-Performance
-Response Time: The total time from when a client sends a request to when it receives a response.
+-----
 
-Response Time = Processing Time + Waiting Time
+## **System Quality Attributes Requirements**
 
-Throughput: The amount of work or data processed by the system per unit of time.
+Quality attributes are a measure of how well a system performs on a particular dimension. They have a direct correlation with the system's architecture.
 
-Percentiles: Used to measure performance distribution and identify "tail latency," which is the small percentage of requests that take the longest.
+Key considerations for quality attributes:
 
-Scalability
-The ability of a system to handle a growing amount of work by adding resources.
+  * **Testability and Measurability**: Quality attributes must be testable and measurable.
+  * **Trade-Offs**: No single architecture can provide all quality attributes, as some can contradict each other.
+  * **Feasibility**: It's important to ensure the system can actually deliver what the client is asking for.
 
-Vertical Scalability (Scale Up): Adding more resources to a single machine (e.g., more CPU, RAM).
+-----
 
-Horizontal Scalability (Scale Out): Adding more machines to the system. This is often preferred for large-scale systems.
+## **System Constraints in Software Architecture**
 
-Team/Organizational Scalability: How the software architecture impacts the productivity of the engineering team.
+A **system constraint** is a pre-made decision that limits a system's degrees of freedom.
 
-Availability
-The fraction of time a service is functional and accessible.
+Types of constraints include:
 
-Availability = Uptime / (Uptime + Downtime)
+  * Technical constraints
+  * Business constraints
+  * Regulatory/legal constraints (global or specific to a region)
 
-MTTR (Mean Time to Recovery): The average time it takes to recover from a failure.
+Constraints can force sacrifices in architecture and implementation. It's recommended to use a **loosely coupled architecture** to handle constraints.
 
-Fault Tolerance: The ability of a system to remain operational despite failures in one or more components. This is achieved through:
+-----
 
-Redundancy and Replication: Having multiple copies of components.
+## **Most Important Quality Attributes in Large-Scale Systems**
 
-Failure Detection and Isolation: Using health checks and monitoring.
+### Performance
 
-Recovery: Mechanisms to restore a failed component.
+**Performance** is measured by **Response Time** and **Throughput**.
 
-3. API Design
-API (Application Programming Interface): A contract for communication between different parts of a system.
+  * **Response Time**: The total time from a client sending a request to receiving a response.
+      * `Response Time = Processing Time + Waiting Time`.
+      * **Waiting Time** is the time a request spends idle in the system.
+      * **Tail Latency** refers to the small percentage of response times that are the longest compared to the rest.
+  * **Throughput**: The amount of work or data processed by the system per unit of time. It's measured in tasks per second or bits/bytes per second.
 
-Idempotency: An operation that can be performed multiple times without changing the result beyond the initial execution.
-
-REST API:
-
-An architectural style for networked applications.
-
-Uses standard HTTP methods (GET, POST, PUT, DELETE) to interact with named resources (nouns).
-
-RPC (Remote Procedure Call):
-
-A protocol that allows a program to call a procedure on a remote machine as if it were a local function.
-
-Often uses an Interface Description Language (IDL) and stubs to abstract the communication details.
-
-4. Architectural Building Blocks
-Load Balancer
-Distributes incoming network traffic across a group of backend servers to ensure no single server is overwhelmed.
+Here is a diagram showing the relationship between processing and waiting time in response time:
 
 ```mermaid
-graph TD
-    Client[Client Application] --> LB[Load Balancer];
-    LB --> Server1[Server 1];
-    LB --> Server2[Server 2];
-    LB --> Server3[Server 3];
+graph LR
+    A[Client Request] --> B[Processing Time];
+    C[Waiting Time] --> D[Processing Time];
+    B --> E[Response to Client];
+    D --> E;
 ```
 
-Message Broker
-A software component that facilitates asynchronous communication between applications by using a message queue.
+
+
+### Scalability
+
+**Scalability** is the ability of a system to handle more work, easily and cost-effectively, by adding resources to the system.
+
+Types of scalability:
+
+  * **Vertical Scalability (Scale Up)**: Adding or upgrading resources on a single computer.
+  * **Horizontal Scalability (Scale Out)**: Adding more resources in the form of new instances on different machines.
+  * **Team/Organizational Scalability**: How the software architecture impacts team productivity.
+
+### Availability
+
+**Availability** is the fraction of time a service is functional and accessible to users.
+
+  * `Availability = Uptime / (Uptime + Downtime)`
+  * **Uptime**: The time the system is operational and accessible.
+  * **Downtime**: The time the system is unavailable.
+  * Availability can also be calculated as: `Availability = MTBF / (MTBF + MTTR)`. MTTR stands for Mean Time to Recovery.
+
+### Fault Tolerance
+
+**Fault Tolerance** enables a system to stay operational despite failures in its components.
+
+Sources of failure include:
+
+  * Human error
+  * Software errors
+  * Hardware failures
+
+Tactics for achieving fault tolerance include:
+
+  * **Failure Prevention**: Using redundancy and replication.
+  * **Failure Detection and Isolation**: Using monitoring and health checks.
+  * **Recovery**: Stopping traffic to the failed instance, restarting the host, or rolling back.
+
+### SLA, SLO, SLI
+
+  * **SLA (Service Level Agreement)**: A legal contract that defines the quality of service.
+  * **SLO (Service Level Objectives)**: Target values or ranges that the service needs to meet.
+  * **SLI (Service Level Indicators)**: Quantitative measures of compliance with SLOs.
+
+Important considerations for SLOs and SLIs:
+
+  * Don't set an SLO for every measurable SLI.
+  * Promise fewer, more realistic SLOs and include a budget for error.
+  * Have a recovery plan for when SLOs aren't met.
+
+-----
+
+## **API Design**
+
+An **API (Application Programming Interface)** is a contract between the engineers who implement the system and the client applications that use it.
+
+Categories of APIs:
+
+  * Public APIs
+  * Private/Internal APIs
+  * Partner APIs
+
+API best practices include:
+
+  * Encapsulating internal design.
+  * Making the API easy to use.
+  * Ensuring operations are **idempotent** (performing an operation multiple times doesn't change the result).
+  * Using API pagination.
+  * Handling asynchronous operations.
+  * Versioning the API.
+
+### RPC (Remote Procedure Call)
+
+**RPC** makes a remote procedure call look like a local method call. RPC frameworks support multiple programming languages. The details of communication and data transfer are abstracted away from the developer.
+
+Drawbacks compared to local method invocation are that RPC is slower and less reliable.
+
+Here is a diagram of RPC:
 
 ```mermaid
-graph TD
-    Sender[Sender Application] --> MB[Message Broker];
-    MB --> Receiver[Receiver Application];
+graph LR
+    A[Client Application] --> B[Remote Procedure Call];
+    B --> C[Server Application];
+    C --> D[Response];
+    D --> A;
 ```
 
-API Gateway
-A single entry point for all client requests, handling tasks like security, routing, and monitoring before forwarding requests to the appropriate backend services.
+### REST API
+
+**REST (Representational State Transfer)** is a set of architectural constraints for web APIs.
+
+Key concepts:
+
+  * **HATEOAS** (Hypermedia as the Engine of the Application State): A dynamic interface.
+  * **Statelessness**: No client state is stored on the server between requests.
+  * **Cacheability**: Responses can be cached to improve performance.
+  * **Named Resources**: Resources are either simple or collection resources.
+
+REST API best practices for resources:
+
+  * Use nouns for resource names.
+  * Distinguish between collection and simple resources.
+  * Use clear and meaningful names.
+  * Ensure unique and URL-friendly identifiers.
+
+REST API operations are mapped to HTTP methods:
+
+  * **Create** a new resource -\> `POST`.
+  * **Update** an existing resource -\> `PUT`.
+  * **Delete** an existing resource -\> `DELETE`.
+  * **Get** the state of a resource -\> `GET`.
+  * **List** sub-resources of a collection -\> `GET`.
+
+-----
+
+## **Large Scale Systems Architectural Building Blocks**
+
+### DNS, Load Balancing & GSLB
+
+The role of a **Load Balancer (LB)** is to distribute incoming requests among a group of servers to prevent any single server from becoming overwhelmed.
+
+Types of load balancers:
+
+  * **DNS Load Balancing**: Uses DNS records to distribute traffic.
+  * **Hardware Load Balancing**: Runs on dedicated, optimized hardware.
+  * **Software Load Balancing**: Programs that run on general-purpose computers.
+  * **Global Server Load Balancing (GSLB)**: Distributes traffic across servers in different geographical locations.
+
+Here is a diagram showing a load balancer distributing requests to a group of servers:
 
 ```mermaid
-graph TD
-    Client[Client Application] --> AG[API Gateway];
-    AG --> Frontend[Frontend Service];
-    AG --> Users[Users Service];
-    AG --> Video[Video Service];
-    AG --> Comments[Comments Service];
+graph LR
+    A[Client Applications] --> LB(Load Balancer);
+    LB --> S1(Server 1);
+    LB --> S2(Server 2);
+    LB --> S3(Server 3);
 ```
 
-Content Delivery Network (CDN)
-A globally distributed network of servers that caches static content (like images and videos) closer to the end-users to speed up delivery.
+### Message Brokers
 
-5. Data Storage
-Relational Databases
-Organize data in tables with a predefined schema.
+A **message broker** is an architectural component that uses a queue to store messages between senders and receivers, facilitating **asynchronous communication** within a system.
 
-Support ACID transactions (Atomicity, Consistency, Isolation, Durability) which are crucial for data integrity.
+Benefits:
 
-Non-Relational Databases (NoSQL)
-Store data without a fixed schema.
+  * Services can publish messages to a channel.
+  * Services can subscribe to a channel and get notified when a new event is published.
 
-Key/Value Store: Stores data as a collection of key-value pairs.
-
-Document Store: Stores data in flexible, semi-structured documents (e.g., JSON).
-
-Graph Database: Optimized for relationships between data points.
-
-Database Scaling Techniques
-Replication: Creating multiple copies of the database to improve availability and read performance.
-
-Partitioning/Sharding: Dividing a large database into smaller, more manageable parts across different servers.
-
-6. Software Architecture Patterns
-Multi-Tier Architecture
-Divides an application into logical tiers: Presentation, Application, and Data. This allows for horizontal scaling of each tier independently.
-
-Microservices Architecture
-A style that structures an application as a collection of small, independently deployable, loosely coupled services.
-
-Each service often has its own separate database.
-
-Event-Driven Architecture
-A pattern where system components communicate by producing and consuming events.
-
-Event Sourcing: The application state is determined by a sequence of events.
-
-CQRS (Command Query Responsibility Segregation): Separates the data model for read operations (queries) from the data model for write operations (commands).
+Here is a diagram of a message broker:
 
 ```mermaid
-graph TD
-    A[Update Operation] --> B[Service A];
-    B --> C[Write Optimized DB];
-    D[Read Operation] --> E[Service B];
-    E --> F[Read Optimized DB];
-    B --> M[Message Broker];
-    M --> E;
+graph LR
+    A[Sender Application] --> B[Message Broker];
+    B --> C[Receiver Application];
 ```
 
-Big Data Architecture Patterns
-Batch Processing: Processing large volumes of data that have been collected over a period of time.
+### API Gateway
 
-Real-Time Processing: Processing data as it is generated, often in streams.
+An **API Gateway** follows the "API composition" pattern, allowing clients to call a single service that, in turn, routes requests to multiple backend services.
 
-Lambda Architecture: Combines both batch and real-time processing to provide a comprehensive view of data.
+Benefits:
 
-7. System Design Practice - E-Commerce Marketplace
-Functional Diagram
-This diagram shows the high-level services and their interactions.
+  * Seamless internal modifications and refactoring.
+  * Consolidates security, authorization, and authentication in one place.
+  * Handles request routing.
+  * Performs static content and response caching.
+  * Offers monitoring and alerting capabilities.
+  * Can perform protocol translation.
+
+Considerations:
+
+  * It should not contain business logic.
+  * It can become a single point of failure.
+  * External services shouldn't bypass it.
+
+Here is a diagram showing the API Gateway pattern:
 
 ```mermaid
 graph TD
-    API[API Gateway] --> Web[Web App Service];
-    Web --> Orders[Orders];
-    Web --> Products_Search[Products Search];
-    Web --> Inventory[Inventory];
-    Web --> Taxes[Taxes];
-    Web --> Payments[Payments];
-    Web --> Shipping[Shipping];
-    Web --> Notifications[Notifications];
-    Web --> Product_Mgmt[Product Management System];
-    Products_Search --> Search_DB[Search Database];
-    Products_Search --> Products[Products];
-    Products_Search --> Document_Store[Document Store];
-    Orders --> Order_Recovery[Order Recovery];
-    Orders --> Speed_Batch[Speed Batch];
-    Orders --> SQL_DB[SQL Database];
-    Taxes --> NoSQL_DB_T[NoSQL Database];
-    Payments --> KV_Store[Key/Value Store];
-    Shipping --> NoSQL_DB_S[NoSQL Database];
-    Notifications --> NoSQL_DB_N[NoSQL Database];
-    Product_Mgmt --> Object_Store[Object Store];
+    A[Client] --> B(API Gateway Service);
+    B --> C(Frontend Service);
+    B --> D(Users Service);
+    B --> E(Video Service);
+    B --> F(Comments Service);
+```
+
+### Content Delivery Network (CDN)
+
+A **Content Delivery Network (CDN)** is a globally distributed network of servers designed to speed up the delivery of content to end-users.
+
+Content publishing strategies:
+
+  * **Pull Strategy**: The CDN "pulls" content from the origin server when a user requests it.
+  * **Push Strategy**: The origin server "pushes" content to the CDN proactively.
+
+Here is a diagram of the pull strategy:
+
+```mermaid
+graph LR
+    A[End User] -- Request --> B(CDN);
+    B -- Request --> C(Server);
+    C -- Return Asset --> B;
+    B -- Return Asset --> A;
+```
+
+-----
+
+## **Data Storage at Global Scale**
+
+### Relational Databases & ACID Transactions
+
+Relational databases have a predefined schema, giving developers knowledge of what each record must contain.
+
+Advantages:
+
+  * Ability to form complex and flexible queries.
+  * Efficient storage.
+  * Natural structure for humans to understand.
+  * Support **ACID transactions**.
+      * **Atomicity**: A set of operations either all appear at once or don't appear at all.
+      * **Consistency**: A committed transaction is seen by all future queries and does not violate any constraints.
+      * **Isolation**: Deals with concurrent operations and their effects on each other.
+      * **Durability**: Once a transaction is complete, its final state persists permanently in the database.
+
+### Non-Relational Databases
+
+Non-relational databases (NoSQL) are categorized by their data models.
+
+  * **Key/Value Store**: Stores data as a key-value pair.
+  * **Document Store**: Stores collections of documents, where each document is an object with different attributes.
+  * **Graph Database**: Optimized for navigating and analyzing relationships between records.
+
+### Techniques to Improve Database Performance, Availability & Scalability
+
+  * **Database Indexing**: Creates an index to allow for faster data retrieval from a table.
+  * **Database Replication**: Creates multiple copies (replicas) of a database to improve availability and read performance.
+  * **Database Partitioning/Sharding**: Divides a large database into smaller, more manageable parts called shards or partitions.
+
+### Brewer's (CAP) Theorem
+
+The **CAP Theorem** states that in the presence of a network partition, a distributed database can only guarantee either **Consistency** or **Availability**, but not both.
+
+  * **Consistency**: Every read request receives the most recent write or an error.
+  * **Availability**: Every request receives a non-error response, without the guarantee that it contains the most recent write.
+
+-----
+
+## **Software Architecture Patterns**
+
+### Multi-Tier Architecture
+
+This pattern separates an application into multiple tiers, such as a presentation tier, application tier (logic/business tier), and a data tier.
+
+  * **Advantages**: Fits a variety of use cases and is easy to scale horizontally.
+  * **Drawback**: The logic tier can become monolithic.
+
+Here is a diagram of the Multi-Tier Architecture:
+
+```mermaid
+graph LR
+    PT[Presentation Tier] --> AT[Application Tier];
+    AT --> DT[Data Tier];
+    subgraph Presentation Tier
+        A[Webpage]
+        B[Mobile App]
+        C[Desktop Application]
+    end
+    subgraph Application Tier
+        D[Logic Tier]
+        E[Business Tier]
+    end
+    subgraph Data Tier
+        F[Files]
+        G[Database]
+    end
+```
+
+### Microservices Architecture
+
+In a **Microservices Architecture**, business logic is organized into loosely coupled, independently deployed services.
+
+Best practices include:
+
+  * Following the Single Responsibility Principle for each service.
+  * Using a separate database for each service.
+
+Here is a diagram of Microservices Architecture:
+
+```mermaid
+graph TD
+    A[API Gateway] --> B[Image Service];
+    A --> C[User Profile Service];
+    A --> D[Matching Service];
+    A --> E[Billing Service];
+    A --o F[API Gateway]
+```
+
+### Event-Driven Architecture
+
+An **event** is an immutable statement of a fact or a change. In an event-driven architecture, services communicate by publishing and consuming events, often using a message broker.
+
+Here is a diagram of the Event-Driven Architecture pattern:
+
+```mermaid
+graph LR
+    A[Microservice A] --> MB(Message Broker);
+    MB --> B[Microservice B];
+```
+
+-----
+
+## **Design a Highly Scalable Discussion Forum**
+
+### Functional Architecture Diagram
+
+Below is the functional architecture diagram for a highly scalable discussion forum:
+
+```mermaid
+graph TD
+    subgraph Web App Service
+        A[Web Pages]
+        B[Images]
+        C[Posts]
+    end
+
+    A --> U(Users Service);
+    B --> BS(Blob Store);
+    C --> PC(Posts & Comments Service);
+    C --> R(Ranking Service);
+    C --> V(Votes Service);
+
+    U --> SQL(SQL Database);
+    PC --> ND1(NoSQL Database);
+    R --> ND2(NoSQL Database);
+    V --> ND3(NoSQL Database);
+```
+
+-----
+
+### Final Software Architecture
+
+Below is the final software architecture diagram for a highly scalable discussion forum:
+
+```mermaid
+graph TD
+    Client --> AG(API Gateway);
+    AG --> WA(Web App Service);
+    AG --> US(Users Service);
+    AG --> PC(Posts & Comments Service);
+    AG --> RS(Ranking Service);
+    AG --> VS(Votes Service);
+    AG --> CDN(CDN);
+
+    US --> SQL(SQL Database);
+    PC --> NoSQL1(NoSQL Database);
+    RS --> NoSQL2(NoSQL Database);
+    VS --> NoSQL3(NoSQL Database);
+    CDN --> BS(Blob Store);
+```
+
+-----
+
+## **Design an E-Commerce Marketplace Platform**
+
+### Functional Diagram
+
+Below is the functional diagram for an e-commerce marketplace platform:
+
+```mermaid
+graph TD
+    Client(API Gateway) --> PMS(Product Management System)
+    Client --> WAS(Web App Service)
+    Client --> OR(Order Recovery)
+
+    PMS --> SQL(SQL Database)
+    WAS --> Orders(Orders)
+    Orders --> Ship(Shipping)
+    Orders --> Not(Notifications)
+    Orders --> Pay(Payments)
+    Orders --> Tax(Taxes)
+    Orders --> Inv(Inventory)
+    Orders --> PS(Products Search)
+
+    PMS --> OS(Object Store)
+    Orders --> KV(Key/Value Store)
+    Inv --> NoSQL(NoSQL Database)
+    Tax --> NoSQL
+    Pay --> NoSQL
+    Ship --> NoSQL
+    Not --> NoSQL
+    PS --> SD(Search Database)
+    Products --> DS(Document Store)
+
+    subgraph Speed Batch
+        direction LR
+        S(Speed) --> P(Products);
+        B(Batch) --> P;
+    end
 ```
