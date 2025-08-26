@@ -399,6 +399,51 @@ graph LR
     MB --> B[Microservice B];
 ```
 
+### Strategies for Processing Infinite Streams of Events
+Processing infinite streams of events requires windowing strategies to break the stream into manageable, finite chunks.
+
+#### Tumbling Window Strategy
+A Tumbling Window is a fixed-size, non-overlapping, and back-to-back window. Each event belongs to exactly one window.
+
+#### Hopping Window Event-Stream Processing Strategy
+A Hopping Window consists of fixed-size windows that overlap with an advanced interval. Each event can potentially belong to more than one window.
+
+#### Sliding Window Event-Stream Processing Strategy
+A Sliding Window is a fixed-size window with a dynamic advance interval. A new window is created for every new event, and an event can belong to multiple windows.
+
+#### Session Window Event-Stream Processing Strategy
+A Session Window has a dynamic window size. It opens for a specific event and closes after a predetermined inactivity threshold is met.
+
+#### Time in Stream Processing and Handling Late Arrival of Events
+There are different types of timestamps in stream processing:
+
+- Event Time: The time the event actually occurred at the source.
+- Application Time / Arrival Time: The time the event arrived at the processing application.
+- Processing Time: The time the event is processed by the application.
+
+Late arriving events can be handled by:
+
+Discarding them.
+
+Using a grace period, which is an extra time a window will stay open to accept late events.
+
+Using watermarking, which marks a point in the event stream after which all events with an event time earlier than the watermark are considered late.
+
+## Big Data Architecture Patterns
+### Big Data Processing Strategies
+
+- Batch Processing: Processing large volumes of data that have been collected over time.
+
+- Real-Time Processing: Processing data as it arrives in the system.
+
+## Lambda Architecture
+The Lambda Architecture combines batch and real-time processing to handle both historical and new data. It consists of three layers:
+
+1. Batch Layer: Processes historical data and generates batch views.
+2. Speed Layer: Processes real-time data and generates real-time views.
+3. Serving Layer: Provides a combined view of the batch and speed layers, allowing for fast queries.
+
+
 -----
 
 ## **Design a Highly Scalable Discussion Forum**
