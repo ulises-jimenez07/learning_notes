@@ -466,3 +466,95 @@ graph TD
         Service -- Deliberately injecting failures --> Monitoring[Monitoring & Plan to fix issues];
     end
 ```
+
+## Top 7 Cloud Native Architecture Patterns
+
+Summary of the most common cloud native patterns. Several are already covered in detail elsewhere; the new ones (Strangler Fig, Serverless, Database Sharding) are expanded here.
+
+| Pattern | Where it is covered |
+|---------|---------------------|
+| Microservices Architecture | `software_architecture_large_scale_systems.md` → Microservices Architecture |
+| Event-Driven Architecture | `software_architecture_large_scale_systems.md` → Event-Driven Architecture; Choreography pattern above |
+| Sidecar Pattern | Sidecar & Ambassador pattern above |
+| API Gateway Pattern | `software_architecture_large_scale_systems.md` → API Gateway |
+| Strangler Fig Pattern | Below |
+| Database Sharding / Horizontal Scaling | Below |
+| Serverless Architecture | Below |
+
+### 1. Microservices Architecture (recap)
+
+**Explanation:** Clients (web, mobile, PC) reach the system through a CDN and an **API Gateway**. The gateway delegates authentication to an **Identity Provider** and finds services through **Service Registry & Discovery**. Services are grouped by **business domain** (Domain A, Domain B), each domain owning its **own database** (DB A, DB B). A management component handles configuration and monitoring.
+
+### 2. Event-Driven Architecture (recap)
+
+**Explanation:** An **event producer** publishes events to **topics** in an **event broker** (Kafka, Pub/Sub). **Event consumers** subscribe to the topics they care about. Producers and consumers never call each other directly → loose coupling and independent scaling.
+
+### 3. Sidecar Pattern (Kubernetes view)
+
+**Explanation:** Inside a single **Pod** run the **core container** plus helper containers: a **sidecar proxy** (handles ingress/egress traffic, mTLS, retries — e.g. Envoy/Istio) and a **sidecar log scraper** that reads from a **shared file system** volume and ships logs to a **log aggregator**. The core container only contains business logic.
+
+### 4. Strangler Fig Pattern
+
+**Explanation:** Used to **incrementally migrate a legacy monolith** to microservices. A **strangler facade** (proxy/router) sits in front of the monolith and receives all client traffic. Functionality is re-implemented piece by piece as new microservices, and the facade progressively routes those requests to the new services instead of the monolith. Eventually the monolith is "strangled" (no traffic left) and can be retired. Named after the fig vine that grows around a tree until it replaces it.
+
+**Use Case:** A legacy e-commerce monolith. First the *Catalog* feature is rewritten as a microservice and the facade routes `/catalog/*` to it; then *Orders*, then *Payments*. Each step is small and reversible (just change routing back).
+
+```mermaid
+graph LR
+    Clients[Web / Mobile / Desktop clients] --> Facade[Strangler Facade]
+    Facade -- legacy routes --> Monolith[(Legacy Monolith)]
+    Facade -- migrated routes --> MS1[Microservice 1]
+    Facade -- migrated routes --> MS2[Microservice 2]
+```
+
+**Often combined with:** the Anti-Corruption Adapter pattern (new services talking to the legacy system).
+
+### 5. Database Sharding / Horizontal Scaling Architecture
+
+**Explanation:** Client apps call an **API Gateway** that routes to **stateless microservices** (Catalog, Shopping Cart, Discount, Ordering). Because they are stateless, each service can be **scaled horizontally** (add more instances behind a load balancer). State lives in **per-service databases**, and large databases are **sharded** (data split by a shard key, e.g. `user_id % N`) across several nodes. Services communicate asynchronously via a **message broker**.
+
+**Key points:**
+- Keep compute stateless → scale out by adding instances.
+- Choose a shard key that distributes load evenly and avoids hotspots.
+- Cross-shard queries/joins are expensive → design data access around the shard key.
+
+```mermaid
+graph TD
+    Client[Client Apps] --> GW[API Gateway]
+    GW --> Catalog[Catalog]
+    GW --> Cart[Shopping Cart]
+    GW --> Discount[Discount]
+    GW --> Ordering[Ordering]
+    Catalog --> DB1[(DB shard)]
+    Cart --> DB2[(DB shard)]
+    Discount --> DB3[(DB shard)]
+    Ordering --> DB4[(DB shard)]
+    Catalog <--> MB{{Message Broker}}
+    Cart <--> MB
+    Discount <--> MB
+    Ordering <--> MB
+```
+
+### 6. Serverless Architecture
+
+**Explanation:** Business logic runs as **functions** (AWS Lambda, Cloud Functions, Cloud Run) that are triggered by an **API** call or by **event sources** (queue messages, storage uploads, DB changes). The cloud provider manages servers, scaling (including to zero) and availability; you pay per execution.
+
+**Pros:** no server management, automatic scaling, pay-per-use.
+**Cons:** cold starts, execution time limits, vendor lock-in, harder local debugging, state must live in external storage.
+
+**Use Case:** An image upload triggers a function that generates thumbnails and writes metadata to a database; a queue triggers another function that sends notifications.
+
+```mermaid
+graph LR
+    Clients[Web / Mobile] --> API[API Gateway]
+    API --> F1[Function]
+    API --> F2[Function]
+    F1 --> Storage[(Data storage)]
+    Storage -- event --> F3[Function]
+    F3 --> Queue[[Queue]]
+    Queue -- event --> F4[Function]
+```
+
+### 7. API Gateway Pattern (recap)
+
+**Explanation:** A single entry point for all client apps. It routes each request to the right microservice (Catalog, Cart, Discount, Ordering, each with its own DB) and centralizes cross-cutting concerns: authentication, rate limiting, TLS termination, request aggregation, caching. See also **Backends for Frontends** above for one gateway per client type.

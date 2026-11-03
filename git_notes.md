@@ -198,4 +198,82 @@ Add most common git commands as a cheat sheets
 * Keep your branches small and focused.
 * Use `git rebase` to clean up your commit history.
 * Use `git bisect` to find the commit that introduced a bug.
-* Use `git blame` to see who last
+* Use `git blame` to see who last modified each line of a file.
+**Additional commands (from cheat sheet images)**
+
+* `git reset <file>`: Unstage a file but keep its changes in the working directory.
+* `git stash apply`: Restore the latest stash **but keep it** in the stash list (`git stash pop` restores it and removes it).
+* `git stash list`: List all stashes.
+* `git fetch`: Get all changes from the origin **without merging** them.
+* `git remote add <name> <url>`: Create a new connection to a remote repo.
+
+# Git Areas: How Commands Move Changes
+
+Git has four local areas plus the remote. Each command moves changes between them:
+
+| Area | What it holds |
+|------|---------------|
+| **Working directory** | The files you are editing |
+| **Staging (index)** | Snapshot of what goes into the next commit |
+| **Local repository** | Your commits (`.git`) |
+| **Remote-tracking branches** | Local copy of the remote state (`origin/main`) |
+| **Stash** | Temporarily shelved changes |
+| **Remote** | The shared repository (GitHub, GitLab…) |
+
+```mermaid
+graph LR
+    WD[Working directory] -- git add --> ST[Staging]
+    ST -- git reset --> WD
+    ST -- git commit --> LR[Local repository]
+    LR -- git push --> RM[Remote]
+    RM -- git fetch --> RT[Remote-tracking branch]
+    RT -- git merge --> WD
+    RM -- "git pull (fetch + merge)" --> WD
+    WD -- git stash --> SH[Stash]
+    SH -- "git stash apply / pop" --> WD
+```
+
+Key idea: **`git pull` = `git fetch` + `git merge`**.
+
+# Git Merge vs. Git Rebase
+
+Starting point: `main` has commits `A-B-C-D`, and `feature` branched from `B` with `E-F-G`.
+
+```
+Original
+A - B - C - D          (main)
+     \
+      E - F - G        (feature)
+```
+
+**`git merge`** — creates a new *merge commit* that joins both histories. History is preserved exactly as it happened (non-destructive), but the graph gets extra merge commits.
+
+```
+After git merge (on main: git merge feature)
+A - B - C - D ------- G'   (main, G' = merge commit)
+     \               /
+      E - F - G -----      (feature)
+```
+
+**`git rebase`** — re-applies the feature commits **on top of** the tip of main, creating new commits `E' F' G'` (new SHAs). History becomes linear, but it is rewritten.
+
+```
+After git rebase (on feature: git rebase main)
+A - B - C - D - E' - F' - G'   (feature, then fast-forward main)
+```
+
+| | Merge | Rebase |
+|---|---|---|
+| History | Preserved, shows branching | Linear, rewritten |
+| Creates | One merge commit | New copies of each commit |
+| Safe on shared branches | Yes | **No** — never rebase commits others already pulled |
+| Typical use | Integrating finished features into `main` | Updating your local feature branch with latest `main`, cleaning history before a PR |
+
+```bash
+# Update a feature branch with the latest main using rebase
+git checkout feature
+git fetch origin
+git rebase origin/main
+# fix conflicts -> git add <file> -> git rebase --continue   (or git rebase --abort)
+git push --force-with-lease   # needed because history was rewritten
+```
